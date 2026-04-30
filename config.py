@@ -6,6 +6,9 @@ from datetime import datetime, timedelta
 import logging
 import os
 from logging.handlers import RotatingFileHandler
+from dotenv import load_dotenv
+import os
+load_dotenv()
 # Racine du projet 
 ROOT_DIR = Path(__file__).resolve().parent
 
@@ -25,23 +28,23 @@ for dir in [RAW_DIR, PROCESSED_DIR, EXPORTS_DIR, MODELS_DIR]:
 BENIN_COUNTRY_CODE = "BN"
 BENIN_ADM1_PREFIX  = "BN"          # Préfixe des codes admin. niveau 1
 
-# Fenêtre temporelle : 12 derniers mois
-END_DATE   = datetime.today()
-START_DATE = END_DATE - timedelta(days=365)
+# Fenêtre temporelle : 12 dernier mois
+END_DATE =20260101 
+START_DATE = 20250101
 
 DATE_FORMAT = "%Y%m%d"
 
 # urls GDELT
-GDELT_BASE_URL        = "http://data.gdeltproject.org/events"
-GDELT_V2_BASE_URL     = "http://data.gdeltproject.org/gdeltv2"
+GDELT_BASE_URL  = "http://data.gdeltproject.org/events"
+GDELT_V2_BASE_URL = "http://data.gdeltproject.org/gdeltv2"
 GDELT_MASTER_LIST_URL = f"{GDELT_V2_BASE_URL}/masterfilelist.txt"
 GDELT_LAST_15_URL     = f"{GDELT_V2_BASE_URL}/lastupdate.txt"
 
 # Google BigQuery
-BQ_PROJECT     = "isheero-gcp-project-id"    #id project
-BQ_DATASET     = "gdelt-bq.gdeltv2"
-BQ_TABLE       = "events"
-BQ_QUOTA_TB    = 1.0                        # Quota gratuit mensuel (To)
+BQ_DATASET = "gdelt-bq.gdeltv2"
+BQ_TABLE = "events"
+BQ_QUOTA_TB = 1.0
+BQ_PROJECT = os.getenv("GCP_PROJECT_ID", "benin-insights-2026")
 
 # Colonnes GDELT (58 champs, GDELT 2.0)
 GDELT_COLUMNS = [
@@ -99,6 +102,30 @@ QUAD_CLASS_LABELS = {
     2: "Coopération matérielle",
     3: "Conflit verbal",
     4: "Conflit matériel",
+}
+
+CAMEO_ROOT_LABELS = {
+
+"01": "Déclaration / commentaire",
+"02": "Appel / demande",
+"03": "Intention exprimée",
+"04": "Consultation",
+"05": "Soutien",
+"06": "Coopération",
+"07": "Aide / assistance",
+"08": "Accord / signature",
+"09": "Médiation",
+"10": "Demande / négociation",
+"11": "Désaccord",
+"12": "Rejet / accusation",
+"13": "Menace",
+"14": "Protestation",
+"15": "Coercition",
+"16": "Attaque",
+"17": "Acte de violence",
+"18": "Assaut",
+"19": "Manifestation",
+"20": "Usage de la force",
 }
 
 #  Logging
