@@ -29,8 +29,8 @@ BENIN_COUNTRY_CODE = "BN"
 BENIN_ADM1_PREFIX  = "BN"          # Préfixe des codes admin. niveau 1
 
 # Fenêtre temporelle : 12 dernier mois
-END_DATE =20260101 
-START_DATE = 20250101
+END_DATE = "20260101"
+START_DATE = "20250101"
 
 DATE_FORMAT = "%Y%m%d"
 
