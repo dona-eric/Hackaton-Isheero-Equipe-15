@@ -1,100 +1,352 @@
-# 🇧🇯 Bénin HACKATONiSHEERO × DataCamp 2026
-
-Bienvenue dans le dépôt du projet **HACKATON ISHEERO EQUIPE 15** ! Ce projet est dédié à la surveillance, l'extraction et l'analyse avancée des événements liés au **Bénin** couverts par la base de données mondiale GDELT (01 Janvier 2025 – 01 Janvier 2026).
-
-### Objectifs:
-
-1- Analyse l'image du Bénin à l'échelle internationale à travers les médias sociaux
-
-2- Détecter les tendances et anomalies dans la couverture médiatique du Bénin
-
-3- Développer un modèle de prédiction pour anticiper les crises potentielles
-
-Les membres de l'équipe sont :
-
-* 
-
-L'originalité de ce travail réside dans le dépassement d'une modélisation binaire pour adopter une approche de **clustering non supervisée**, permettant de cartographier finement l'image du pays à l'échelle internationale et sa viralité sur les médias sociaux.
+# 🇧🇯 Bénin Insights Challenge — HACKATON iSHEERO × DataCamp 2026
+> **Équipe 15** — Surveillance, analyse et modélisation de l'image internationale du Bénin via GDELT
 
 ---
 
-## 🏗️ Architecture du Pipeline ETL
+## 📌 Vue d'ensemble
 
-Le pipeline est conçu pour être robuste, modulaire et optimisé pour la mémoire (`src/pipeline/`) :
+Ce projet analyse les **19 368 événements GDELT** impliquant le Bénin sur la période **01 janvier 2025 → 01 janvier 2026**, enrichis par **plus de 13 000 mentions médiatiques** issues de sources mondiales.
 
-1.  **Collector (`collector.py`)** : Extraction via **BigQuery** (recommandé pour le volume) ou via téléchargement direct des fichiers ZIP GDELT optimisé pour la RAM.
-2.  **Cleaner (`cleaner.py`)** : 
-    * Optimisation des types (Nullable types) pour réduire l'empreinte mémoire.
-    * Enrichissement temporel et imputation intelligente de la tonalité (`AvgTone`).
-    * Conversion des codes CAMEO en labels explicites.
-3.  **Loader (`loader.py`)** : Chargement et export haute performance au format **Parquet compressé (zstd)**.
+L'originalité de ce travail réside dans le **dépassement d'une modélisation binaire** pour adopter une approche de **clustering non supervisé** (DBSCAN, Spectral Clustering, GMM), permettant de cartographier finement l'image du pays à l'échelle internationale, sa viralité médiatique et ses zones de sensibilité.
 
 ---
 
-## 📊 Analyse de l'Image Pays & Clustering
+## 👥 Équipe
 
-Plutôt qu'une simple classification, nous avons implémenté des algorithmes de clustering pour découvrir les patterns cachés dans l'image médiatique du Bénin.
-
-### Méthodologie
-* **Algorithmes testés** : DBSCAN (détection d'anomalies), Spectral Clustering (relations complexes) et **GMM (Gaussian Mixture Model)**.
-* **Optimisation** : Le nombre de clusters a été déterminé par le calcul du **score BIC** (Bayesian Information Criterion), révélant un optimum à **k=5**.
-* **Features prioritaires** : `GoldsteinScale` (impact), `AvgTone` (sentiment), `NumMentions` (viralité) et `MentionDocTone` (sensibilité).
-
-### Insights Clés
-* **C1 - Zone de Risque** : Événements à fort impact négatif et sentiment dégradé, captant une large part de la viralité.
-* **C4 - Sensibilité Sociale** : Identifie les sujets à forte viralité sur les réseaux sociaux avant qu'ils ne deviennent des crises majeures.
-* **Viralité** : Les événements négatifs se propagent en moyenne **3 fois plus vite** que les nouvelles de coopération positive.
+| Rôle | Membre |
+|---|---|
+| Data Engineer | Solange |
+| Data Analyst |  |
+| ML Engineer | Eric KOULODJI |
+| ML Engineer | Sunday KOGBETSE |
 
 ---
 
-## 🚀 Reproductibilité & Modèle Hugging Face
+## 🎯 Objectifs
 
-Le modèle v1 est versionné et hébergé sur **Hugging Face** pour une utilisation immédiate.
+1. **Analyser l'image du Bénin** à l'échelle internationale à travers les médias mondiaux
+2. **Détecter les tendances et anomalies** dans la couverture médiatique (ex : pic de décembre 2025)
+3. **Cartographier les risques, viralités et sensibilités** via clustering non supervisé
+4. **Anticiper les crises potentielles** grâce à un modèle de détection précoce
 
-### 1. Installation
-```bash
-git clone [https://github.com/dona-eric/Hackaton-Isheero-Equipe-15.git](https://github.com/dona-eric/Hackaton-Isheero-Equipe-15.git)
-cd Hackaton-Isheero-Equipe-15
-pip install -r requirements.txt
+---
 
+## ⚠️ Note sur le code pays GDELT
 
+> Le Bénin est identifié par le code **`BN`** dans le standard **FIPS 10-4** utilisé par GDELT.
+> **Ne pas confondre avec `BC` (Botswana).**
+> Le filtre SQL correct est : `ActionGeo_CountryCode = 'BN'`
 
-### 2. COnfiguration
+---
 
-```bash
+## 📦 Sources de données
 
-export HF_TOKEN=''
+| Source | Description | Priorité | Statut |
+|---|---|---|---|
+| **Events** | Qui a fait quoi à qui, quand, où — 58 colonnes GDELT | ★★★ | Collecté |
+| **Mentions** | Chaque article citant un événement (ton, délai, source) | ★★★ |  Collecté |
+| **GKG** | Thèmes CAMEO, entités, citations, ton article complet | ★★★ | En cours |
+| **N-grammes** | Fréquence des mots-clés (depuis jan. 2020) | ★★ | Phase 2 |
+| **Graph datasets** | Réseaux d'acteurs et d'influence | ★★ | Phase 2 |
+
+---
+
+## 🏗️ Architecture du projet
 
 ```
+benin-insights/
+├── config.py                        # Configuration centrale (codes, chemins, dates)
+├── run_pipeline.py                  # Point d'entrée unique du pipeline
+├── requirements.txt
+│
+├── src/
+│   └── pipeline/
+│       ├── collector.py             # Chargement CSV exporté depuis BigQuery
+│       ├── cleaner.py               # Nettoyage, typage, features dérivées
+│       └── loader.py                # Chargement et export (CSV, Excel)
+│
+├── notebooks/
+│   ├── 01_eda_events.py             # Analyse exploratoire Events
+│   ├── 02_analyse_mentions.py       # Analyse Events + Mentions combinées
+│   └── 03_clustering.py            # DBSCAN · Spectral · GMM
+│
+├── data/
+│   ├── raw/                         # Fichiers bruts BigQuery (ignorés par Git)
+│   ├── processed/                   # Données nettoyées (.parquet)
+│   └── exports/                     # CSV/Excel pour non-techniciens
+│
+└── models/
+    └── saved/                       # Modèles entraînés (.pkl)
+```
 
-### 3. telechargement du modele
+---
+
+## 🔧 Pipeline ETL
+
+### Étape 1 — Collecte (`collector.py`)
+
+Charge le CSV exporté depuis BigQuery. Vérifie la présence des colonnes critiques et signale le bruit **BENIN CITY** (ville du Nigeria présente dans les données — à ne pas confondre avec un acteur béninois).
+
+```python
+from src.pipeline.collector import GDELTCollector
+
+collector = GDELTCollector()
+df = collector.charger_csv("data/raw/benin_events_2025.csv")
+collector.afficher_apercu(df)
+```
+
+### Étape 2 — Nettoyage (`cleaner.py`)
+
+**17 colonnes sélectionnées** sur 61 disponibles. Les 44 exclues sont soit quasi-vides (< 5% remplies), soit redondantes, soit hors focus projet.
+
+**Colonnes conservées :**
+- `GLOBALEVENTID`, `SQLDATE` → identité et date
+- `Actor1Name`, `Actor1CountryCode`, `Actor1Type1Code` → acteur initiateur
+- `Actor2Name`, `Actor2CountryCode`, `Actor2Type1Code` → acteur cible
+- `EventRootCode`, `QuadClass`, `IsRootEvent` → nature de l'événement
+- `GoldsteinScale`, `AvgTone` → stabilité et ton GDELT
+- `NumMentions`, `NumSources` → couverture quantitative
+- `ActionGeo_FullName`, `ActionGeo_Lat`, `ActionGeo_Long` → géographie
+- `SOURCEURL` → traçabilité journalistique
+
+**Features dérivées créées :**
+| Feature | Calcul | Usage |
+|---|---|---|
+| `date` | SQLDATE → datetime | Agrégations temporelles |
+| `is_conflict` | QuadClass ∈ {3,4} | Clustering, filtrage |
+| `is_cooperation` | QuadClass ∈ {1,2} | Clustering, filtrage |
+| `QuadClass_label` | Map code → libellé FR | Lisibilité |
+| `media_intensity` | Mentions + Sources×2 | Mesure de viralité |
+| `tone_polarity` | AvgTone < -5 / -5..5 / > 5 | Segmentation ton |
+
+### Étape 3 — Chargement (`loader.py`)
+
+Export en CSV (encodage `utf-8-sig` compatible Excel/LibreOffice) ou Excel pour les non-techniciens.
+
+```python
+from src.pipeline.loader import GDELTLoader
+
+loader = GDELTLoader()
+df = loader.load("benin_events_clean.parquet")
+loader.export_csv(df, "benin_events_export.csv")
+```
+
+---
+
+## 📊 Insights clés — Analyse exploratoire
+
+### Sur les Events (19 368 événements)
+
+| Indicateur | Valeur | Interprétation |
+|---|---|---|
+| % coopératifs | 73.6% | Dynamique diplomatique dominante |
+| % conflictuels | 26.4% | dont 14% conflits matériels concrets |
+| Goldstein moyen | +0.54 | Légèrement stabilisant |
+| Tonalité médias | -1.59 | Image légèrement négative |
+| Pic anomal | Déc. 2025 | 4 221 événements (x2.5 la moyenne) |
+
+### ⚠️ Anomalie décembre 2025
+
+Décembre 2025 concentre **4 221 événements** et **5 896 mentions** (x3.3 la moyenne mensuelle). Le Goldstein chute à +0.16 (quasi-neutre) et le ton à -2.65. Les sources nigérianes sont particulièrement actives ce mois. **L'événement déclencheur reste à investiguer.**
+
+### Sur les Mentions (13 090 events enrichis)
+
+| Indicateur | Valeur | Interprétation |
+|---|---|---|
+| Délai de propagation | 80% < 1h | Couverture quasi temps réel |
+| Events viraux (> 5 mentions) | 225 (1.7%) | Longue traîne très marquée |
+| Source la plus négative | New Republic (-9.0) | Couverture critique internationale |
+| Source la plus positive | Forbes (+5.9) | Couverture économique favorable |
+| Corrélation AvgTone ↔ Ton réel | R = 0.70 | GDELT légèrement optimiste |
+
+### Acteurs clés identifiés
+
+- **Forces armées non-étatiques (UAF)** : Goldstein moyen -6.04 → principal facteur déstabilisateur
+- **Criminalité (CRM)** : Goldstein -2.93
+- **Gouvernement** : Goldstein +1.02 → acteur stabilisant
+- **Nigeria** : partenaire le plus actif (relation bilatérale dominante)
+- **⚠️ BENIN CITY** : ville du Nigeria apparaissant 778 fois → bruit à filtrer
+
+---
+
+## 🤖 Modélisation — Clustering non supervisé
+
+### Pourquoi le clustering plutôt que la classification ?
+
+Une approche binaire (conflit/coopération) serait trop réductrice. Les données GDELT recèlent des **patterns complexes et multidimensionnels** — zones de risque, événements viraux, sensibilités géopolitiques — que seul un clustering non supervisé peut révéler sans a priori.
+
+### Features prioritaires pour le clustering
+
+Sélectionnées après analyse PCA (8 composantes capturent 90% de la variance) et étude des corrélations :
+
+| Feature | Dimension mesurée | Source |
+|---|---|---|
+| `GoldsteinScale` | Stabilité politique | Events |
+| `tone_doc_moyen` | Image réelle dans les médias | Mentions |
+| `tone_doc_std` | Controverse / divergence entre médias | Mentions |
+| `nb_mentions` | Viralité brute | Mentions |
+| `doc_len_moyen` | Profondeur de la couverture | Mentions |
+| `delai_moy_h` | Vitesse de propagation | Mentions |
+| `confidence_moy` | Fiabilité du signal | Mentions |
+| `QuadClass` | Nature de l'événement | Events |
+| `EventRootCode` | Type d'action CAMEO | Events |
+| `mois` | Saisonnalité | Events |
+
+> `nb_sources_uniques` **exclu** : corrélation de 0.98 avec `nb_mentions` → fuite potentielle.
+
+### Algorithmes testés
+
+#### 1. DBSCAN — Détection d'anomalies et événements atypique
+
+
+**Ce que DBSCAN révèle :**
+- Événements totalement atypiques (outliers = -1) → signaux d'alerte précoce
+- Clusters de densité variable → zones de tension localisées
+- Pas besoin de spécifier k à l'avance → découverte organique des patterns
+
+#### 2. Spectral Clustering — Relations complexes entre événements
+
+**Ce que Spectral révèle :**
+- Relations non-linéaires entre événements (que K-Means ne peut pas capturer)
+- Communautés médiatiques partageant des patterns de couverture similaires
+- Structure de graphe des événements liés
+
+
+**Pourquoi GMM est le plus adapté :**
+- Fournit une **probabilité d'appartenance** (pas d'assignation dure) → un événement peut appartenir à 60% au cluster "risque" et 40% au cluster "sensible"
+- Gère les clusters de **formes elliptiques** non-sphériques (caractéristique des données GDELT)
+- Le critère **BIC** sélectionne automatiquement le nombre optimal de clusters
+- Idéal pour modéliser des **zones grises** (événements ambigus)
+
+### Profil des 5 clusters identifiés (GMM)
+
+| Cluster | Nom | Goldstein | Ton médias | Viralité | Interprétation |
+|---|---|---|---|---|---|
+| C0 | Diplomatie stable | +3.2 | -0.8 | Faible | Coopération institutionnelle discrète |
+| C1 | Zone de risque | -4.1 | -6.3 | Élevée | Conflits avec forte couverture négative |
+| C2 | Tension latente | -1.2 | -2.9 | Moyenne | Conflits verbaux, désaccords diplomatiques |
+| C3 | Vitrine internationale | +1.8 | +2.1 | Élevée | Événements positifs très médiatisés |
+| C4 | Sensibilité sociale | -0.5 | -4.7 | Très élevée | Sujets viraux avant d'être des crises |
+
+**Insight clé :** Les événements négatifs se propagent en moyenne **3× plus vite** que les événements de coopération positive.
+
+---
+
+## 📈 Résultats des modèles ML
+
+| GMM Clustering (k=5, BIC-optimal) | Silhouette: 0.136 | — | Modèle principal |
+
+> La variable `nb_sources_uniques` avait été exclue du ML supervisé pour éviter une **fuite de données** (corrélation 0.98 avec la cible de viralité).
+
+---
+
+## 🚀 Reproductibilité
+
+### 1. Installation
 
 ```bash
+git clone https://github.com/dona-eric/Hackaton-Isheero-Equipe-15.git
+cd Hackaton-Isheero-Equipe-15
+pip install -r requirements.txt
+```
 
+### 3. Lancement du pipeline
+
+```bash
+# Pipeline complet : collecte → nettoyage → sauvegarde
+python run_pipeline.py
+
+# Test rapide sur 7 jours
+python run_pipeline.py --days 7
+
+# Avec BigQuery (recommandé pour le volume)
+python run_pipeline.py --method bigquery
+```
+
+### 4. Téléchargement du modèle GMM (Hugging Face)
+
+```python
 import joblib
 from huggingface_hub import hf_hub_download
 
-# Téléchargement du modèle GMM optimisé
+# Configurer le token HuggingFace
+import os
+os.environ["HF_TOKEN"] = "VOTRE_TOKEN_HF"
+
+# Téléchargement du modèle GMM optimisé (BIC k=5)
 model_path = hf_hub_download(
     repo_id="donerick/gaussian-model-v1",
     filename="gaussian-model.pkl",
-    token="VOTRE_TOKEN_HF"
+    token=os.environ["HF_TOKEN"]
 )
 
-# Chargement
+# Chargement et prédiction
 model = joblib.load(model_path)
-print("Modèle GMM chargé avec succès.")
+print("✅ Modèle GMM chargé avec succès.")
 
+# Prédire le cluster d'un nouvel événement
+# X_new = scaler.transform([[goldstein, tone, nb_mentions, ...]])
+# cluster = model.predict(X_new)
+# proba   = model.predict_proba(X_new)  # Appartenance probabiliste
 ```
-### 4. Pipeline de collecte et de nettoyage
+
+### 5. Token HuggingFace
 
 ```bash
+export HF_TOKEN='votre_token_ici'
+```
 
-# Lancement du pipeline
-python src/pipeline/run_pipeline.py \
-  --start-date 2025-01-01 \
-  --end-date 2026-01-01 \
-  --mode "both" \
-  --process "all"
+---
+
+## 📋 Bonnes pratiques qualité des données
+
+- **Filtrer `Confidence >= 50`** pour les analyses critiques (42% des mentions ont Confidence < 40)
+- **Signaler BENIN CITY** dans tous les livrables (778 occurrences = ville du Nigeria, pas un acteur béninois)
+- **Utiliser `ActionGeo_CountryCode`** pour la géographie de l'action, pas `Actor1Geo_*` (lieu de l'acteur ≠ lieu de l'événement)
+- **Exclure `NumArticles`** des analyses (corrélation 0.99 avec `NumMentions` → redondant)
+
+---
+
+## 📁 Données et reproducibilité
 
 ```
+data/
+├── raw/
+│   ├── benin_events_2025_jan2026.csv       # Export BigQuery Events
+│   └── gdelt_benin_2025_mentions.csv       # Export BigQuery Mentions
+├── processed/
+│   └── benin_events_clean.parquet          # Dataset nettoyé (snappy)
+└── exports/
+    ├── benin_events_export.csv             # Export journalistes (utf-8-sig)
+    └── clusters_profils.csv               # Profils GMM par cluster
+```
+
+---
+
+## 🔭 Prochaines étapes
+
+- [ ] **Collecter les données GKG** (thèmes CAMEO, citations, ton article complet)
+- [ ] **Enrichir le clustering** avec les thèmes GKG → gain attendu +10-15 pts Silhouette
+- [ ] **Construire le dashboard Streamlit** avec carte interactive et alertes automatiques
+- [ ] **Affiner DBSCAN** : k-distance graph pour optimiser `eps` sur les vraies données
+- [ ] **Comparer les 3 algorithmes** sur les mêmes features → tableau de bord de sélection
+- [ ] **Déployer l'API d'alerte précoce** sur les événements du cluster C4 (sensibilité sociale)
+
+---
+
+## 🛠️ Stack technique
+
+| Outil | Usage |
+|---|---|
+| Python 3.11 | Langage principal |
+| pandas · numpy | Manipulation des données |
+| scikit-learn | Clustering · ML · évaluation |
+| matplotlib · seaborn | Visualisations |
+| Google BigQuery | Collecte GDELT à grande échelle |
+| Hugging Face Hub | Versionning et partage des modèles |
+| POwerBI | Dashboard interactif (phase 3) |
+| Parquet (snappy) | Stockage optimisé des données traitées |
+
+---
+
+*iSHEERO × DataCamp Donates · Hackathon 2026 · Équipe 15 · Bénin Insights Challenge*
