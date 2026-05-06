@@ -15,8 +15,8 @@ L'originalité de ce travail réside dans le **dépassement d'une modélisation 
 
 | Rôle | Membre |
 |---|---|
-| Data Engineer | Solange |
-| Data Analyst |  |
+| Data Engineer | Peace Solange ADOKPO |
+| Data Scientist | Mamadou  Diallo|
 | ML Engineer | Eric KOULODJI |
 | ML Engineer | Sunday KOGBETSE |
 
@@ -27,11 +27,10 @@ L'originalité de ce travail réside dans le **dépassement d'une modélisation 
 1. **Analyser l'image du Bénin** à l'échelle internationale à travers les médias mondiaux
 2. **Détecter les tendances et anomalies** dans la couverture médiatique (ex : pic de décembre 2025)
 3. **Cartographier les risques, viralités et sensibilités** via clustering non supervisé
-4. **Anticiper les crises potentielles** grâce à un modèle de détection précoce
 
 ---
 
-## ⚠️ Note sur le code pays GDELT
+## Note sur le code pays GDELT
 
 > Le Bénin est identifié par le code **`BN`** dans le standard **FIPS 10-4** utilisé par GDELT.
 > **Ne pas confondre avec `BC` (Botswana).**
@@ -51,51 +50,13 @@ L'originalité de ce travail réside dans le **dépassement d'une modélisation 
 
 ---
 
-## 🏗️ Architecture du projet
-
-```
-benin-insights/
-├── config.py                        # Configuration centrale (codes, chemins, dates)
-├── run_pipeline.py                  # Point d'entrée unique du pipeline
-├── requirements.txt
-│
-├── src/
-│   └── pipeline/
-│       ├── collector.py             # Chargement CSV exporté depuis BigQuery
-│       ├── cleaner.py               # Nettoyage, typage, features dérivées
-│       └── loader.py                # Chargement et export (CSV, Excel)
-│
-├── notebooks/
-│   ├── 01_eda_events.py             # Analyse exploratoire Events
-│   ├── 02_analyse_mentions.py       # Analyse Events + Mentions combinées
-│   └── 03_clustering.py            # DBSCAN · Spectral · GMM
-│
-├── data/
-│   ├── raw/                         # Fichiers bruts BigQuery (ignorés par Git)
-│   ├── processed/                   # Données nettoyées (.parquet)
-│   └── exports/                     # CSV/Excel pour non-techniciens
-│
-└── models/
-    └── saved/                       # Modèles entraînés (.pkl)
-```
-
----
-
 ## 🔧 Pipeline ETL
 
-### Étape 1 — Collecte (`collector.py`)
+### Étape 1 — Collecte de données
 
-Charge le CSV exporté depuis BigQuery. Vérifie la présence des colonnes critiques et signale le bruit **BENIN CITY** (ville du Nigeria présente dans les données — à ne pas confondre avec un acteur béninois).
+Charge le CSV exporté depuis BigQuery. Vérifie la présence des colonnes critiques et signale le bruit **BENIN CITY** (ville du Nigeria présente dans les données à ne pas confondre avec un acteur béninois).
 
-```python
-from src.pipeline.collector import GDELTCollector
-
-collector = GDELTCollector()
-df = collector.charger_csv("data/raw/benin_events_2025.csv")
-collector.afficher_apercu(df)
-```
-
-### Étape 2 — Nettoyage (`cleaner.py`)
+### Étape 2 — Nettoyage des données
 
 **17 colonnes sélectionnées** sur 61 disponibles. Les 44 exclues sont soit quasi-vides (< 5% remplies), soit redondantes, soit hors focus projet.
 
@@ -119,17 +80,9 @@ collector.afficher_apercu(df)
 | `media_intensity` | Mentions + Sources×2 | Mesure de viralité |
 | `tone_polarity` | AvgTone < -5 / -5..5 / > 5 | Segmentation ton |
 
-### Étape 3 — Chargement (`loader.py`)
+### Étape 3: Chargement des données
 
-Export en CSV (encodage `utf-8-sig` compatible Excel/LibreOffice) ou Excel pour les non-techniciens.
-
-```python
-from src.pipeline.loader import GDELTLoader
-
-loader = GDELTLoader()
-df = loader.load("benin_events_clean.parquet")
-loader.export_csv(df, "benin_events_export.csv")
-```
+Export en CSV (encodage `utf-8`) ou Excel pour les non-techniciens.
 
 ---
 
@@ -145,7 +98,7 @@ loader.export_csv(df, "benin_events_export.csv")
 | Tonalité médias | -1.59 | Image légèrement négative |
 | Pic anomal | Déc. 2025 | 4 221 événements (x2.5 la moyenne) |
 
-### ⚠️ Anomalie décembre 2025
+### Anomalie décembre 2025
 
 Décembre 2025 concentre **4 221 événements** et **5 896 mentions** (x3.3 la moyenne mensuelle). Le Goldstein chute à +0.16 (quasi-neutre) et le ton à -2.65. Les sources nigérianes sont particulièrement actives ce mois. **L'événement déclencheur reste à investiguer.**
 
@@ -165,11 +118,11 @@ Décembre 2025 concentre **4 221 événements** et **5 896 mentions** (x3.3 la m
 - **Criminalité (CRM)** : Goldstein -2.93
 - **Gouvernement** : Goldstein +1.02 → acteur stabilisant
 - **Nigeria** : partenaire le plus actif (relation bilatérale dominante)
-- **⚠️ BENIN CITY** : ville du Nigeria apparaissant 778 fois → bruit à filtrer
+- **BENIN CITY** : ville du Nigeria apparaissant 778 fois → bruit à filtrer
 
 ---
 
-## 🤖 Modélisation — Clustering non supervisé
+## Modélisation — Clustering non supervisé
 
 ### Pourquoi le clustering plutôt que la classification ?
 
@@ -245,25 +198,17 @@ Sélectionnées après analyse PCA (8 composantes capturent 90% de la variance) 
 ### 1. Installation
 
 ```bash
+
+
 git clone https://github.com/dona-eric/Hackaton-Isheero-Equipe-15.git
+
 cd Hackaton-Isheero-Equipe-15
+
 pip install -r requirements.txt
+
 ```
 
-### 3. Lancement du pipeline
-
-```bash
-# Pipeline complet : collecte → nettoyage → sauvegarde
-python run_pipeline.py
-
-# Test rapide sur 7 jours
-python run_pipeline.py --days 7
-
-# Avec BigQuery (recommandé pour le volume)
-python run_pipeline.py --method bigquery
-```
-
-### 4. Téléchargement du modèle GMM (Hugging Face)
+### 2. Téléchargement du modèle GMM (Hugging Face)
 
 ```python
 import joblib
@@ -312,13 +257,10 @@ export HF_TOKEN='votre_token_ici'
 ```
 data/
 ├── raw/
-│   ├── benin_events_2025_jan2026.csv       # Export BigQuery Events
-│   └── gdelt_benin_2025_mentions.csv       # Export BigQuery Mentions
+
 ├── processed/
-│   └── benin_events_clean.parquet          # Dataset nettoyé (snappy)
-└── exports/
-    ├── benin_events_export.csv             # Export journalistes (utf-8-sig)
-    └── clusters_profils.csv               # Profils GMM par cluster
+
+└── exports/                  
 ```
 
 ---
