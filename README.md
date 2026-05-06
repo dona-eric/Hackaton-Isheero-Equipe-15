@@ -291,4 +291,13 @@ data/
 
 ---
 
-*iSHEERO × DataCamp Donates · Hackathon 2026 · Équipe 15 · Bénin Insights Challenge*
+## 👥 Équipe
+
+| Rôle | Membre | Email |
+|---|---|---|
+| Data Engineer | Peace Solange ADOKPO | ahouefa05@gmail.com |
+| Data Scientist | Mamadou  Diallo| mamadoulamaranadiallomld1@gmail.com |
+| ML Engineer | Eric KOULODJI | donaerickoulodji@gmail.com |
+| ML Engineer | Sunday KOGBETSE | skogbetse@gmail.com |
+
+---
