@@ -62,21 +62,3 @@ Comment exploiter des flux massifs de données médiatiques pour produire une le
 * Pandas 🧮
 * Plotly 📈
 * GDELT Dataset 🌐
-
----
-
-## 🚀 Lancer le projet
-
-```bash
-pip install -r requirements.txt
-streamlit run app.py
-```
-
----
-
-## 👨‍💻 Auteur
-
-**Mamadou Lamarana Diallo**
-Master 2 – Statistique et Informatique Décisionnelle
-
----
